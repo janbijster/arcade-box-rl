@@ -1,3 +1,3 @@
-import {world} from "./mymodule";
+import { Environment } from './Environment.js';
 
-console.log(`hello ${world}`);
+const environment = new Environment();

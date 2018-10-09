@@ -9,14 +9,14 @@ class SimpleHumanoid {
     const legLength = 100;
     const armLength = 80;
     const gapSize = 20;
-    const bodyWidth = 80;
-    const bodyHeight = 80;
+    const torsoWidth = 80;
+    const torsoHeight = 80;
 
     // calc params
-    const bodyCenter = { x: position.x, y: position.y - startHeight - legLength - gapSize - 0.5*bodyHeight };
-    const leftLegCenter = { x: position.x - 0.5*bodyWidth + 0.5*limbThickness, y: position.y - startHeight - 0.5*legLength };
+    const torsoCenter = { x: position.x, y: position.y - startHeight - legLength - gapSize - 0.5*torsoHeight };
+    const leftLegCenter = { x: position.x - 0.5*torsoWidth + 0.5*limbThickness, y: position.y - startHeight - 0.5*legLength };
     const rightLegCenter = { x: 2*position.x - leftLegCenter.x, y: leftLegCenter.y};
-    const leftArmCenter = { x: position.x - 0.5*bodyWidth - gapSize - 0.5*armLength, y: position.y - startHeight - legLength - gapSize - bodyHeight + 0.5 * limbThickness };
+    const leftArmCenter = { x: position.x - 0.5*torsoWidth - gapSize - 0.5*armLength, y: position.y - startHeight - legLength - gapSize - torsoHeight + 0.5 * limbThickness };
     const rightArmCenter = { x: 2*position.x - leftArmCenter.x, y: leftArmCenter.y };
 
 
@@ -26,8 +26,8 @@ class SimpleHumanoid {
 
 
     this.bodies = [
-      // body
-      MATTER.Bodies.rectangle(bodyCenter.x, bodyCenter.y, bodyWidth, bodyHeight),
+      // torso
+      MATTER.Bodies.rectangle(torsoCenter.x, torsoCenter.y, torsoWidth, torsoHeight),
       // legs
       MATTER.Bodies.rectangle(leftLegCenter.x, leftLegCenter.y, limbThickness, legLength),
       MATTER.Bodies.rectangle(rightLegCenter.x, rightLegCenter.y, limbThickness, legLength),
@@ -42,7 +42,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[1],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: -0.5*bodyWidth, y: 0.5*bodyHeight },
+        pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
       }),
       MATTER.Constraint.create({
@@ -50,7 +50,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[1],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: -0.5*bodyWidth + limbThickness, y: 0.5*bodyHeight },
+        pointA: { x: -0.5*torsoWidth + limbThickness, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
       }),
       // right leg:
@@ -59,7 +59,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[2],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: 0.5*bodyWidth, y: 0.5*bodyHeight },
+        pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
       }),
       MATTER.Constraint.create({
@@ -67,7 +67,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[2],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: 0.5*bodyWidth - limbThickness, y: 0.5*bodyHeight },
+        pointA: { x: 0.5*torsoWidth - limbThickness, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
       }),
       // left arm:
@@ -76,7 +76,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[3],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: -0.5*bodyWidth, y: -0.5*bodyHeight },
+        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight },
         pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 }
       }),
       MATTER.Constraint.create({
@@ -84,7 +84,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[3],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: -0.5*bodyWidth, y: -0.5*bodyHeight + limbThickness },
+        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
         pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 }
       }),
       // right arm:
@@ -93,7 +93,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[4],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: 0.5*bodyWidth, y: -0.5*bodyHeight },
+        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight },
         pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 }
       }),
       MATTER.Constraint.create({
@@ -101,7 +101,7 @@ class SimpleHumanoid {
         bodyB: this.bodies[4],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: 0.5*bodyWidth, y: -0.5*bodyHeight + limbThickness },
+        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
         pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 }
       })
     ];
@@ -114,14 +114,12 @@ class SimpleHumanoid {
 
   move(jointTorque) {
     // jointTorque is a 4-element array of torques for the 4 joints
-    //console.log(jointTorque);
     for (let i = 0; i < 4; i++) {
       // set torque on the limb...
       this.bodies[i+1].torque = jointTorque[i];
-      // but apply negative torque on the body to keep the total torque at zero
+      // but apply negative torque on the torso to keep the total torque at zero
       this.bodies[0].torque -= jointTorque[i];
     }
-    //MATTER.Body.applyForce(this.bodies[1], this.bodies[1].position, { x: 1, y: 0 });
   }
 
 }

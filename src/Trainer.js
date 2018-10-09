@@ -10,9 +10,14 @@ class Trainer {
     this.minimumNumberOfSamples = 10;
     // how much samples to use?
     this.maxNumberOfSamples = 1000;
-    this.lookBackFrames = 100;
+    this.keepSamplesFraction = 0.1;
+    this.lookBackFrames = 60;
     this.lastTimestamp = null;
     this.minValuation = 0.3;
+    this.randomSampleProb = 0.01;
+    this.randomSampleCounter = [0, 0];
+    this.randomSample = [[], []];
+    this.randomSampleDuration = 60;
 
     this.samples = [
       [], // samples for p1
@@ -56,11 +61,10 @@ class Trainer {
   updatePastSamples(playerIndex, valuation) {
     // update the recent samples with the new evaluation
     let lastSample = this.pendingSamples[playerIndex].length - 1;
-    let firstSample = Math.max(lastSample - this.lookBackFrames, 0);
+    let firstSample = lastSample - this.lookBackFrames;
 
-    for (let i = firstSample; i < lastSample + 1; i++) {
-      let decay = i/this.lookBackFrames;
-      console.log('decay:', decay);
+    for (let i = Math.max(firstSample, 0); i < lastSample + 1; i++) {
+      let decay = (i - firstSample)/this.lookBackFrames;
       let sample = this.pendingSamples[playerIndex][i];
       sample.valuation += decay * valuation;
     }
@@ -69,14 +73,16 @@ class Trainer {
     while (this.pendingSamples[playerIndex].length > this.lookBackFrames) {
       let sample = this.pendingSamples[playerIndex].shift();
       if (Math.abs(sample.valuation) > this.minValuation) {
-        this.samples[playerIndex].push(sample);
-        // but don't let the buffer get too big
-        if (this.samples[playerIndex].length > this.maxNumberOfSamples) {
-          this.samples[playerIndex].shift();
+        if (Math.random() < this.keepSamplesFraction) {
+          this.samples[playerIndex].push(sample);
+          // but don't let the buffer get too big
+          if (this.samples[playerIndex].length > this.maxNumberOfSamples) {
+            this.samples[playerIndex].shift();
+          }
         }
       }
     }
-
+    console.log(this.samples[playerIndex].length + ' samples in buffer for player ' + playerIndex);
   }
 
   approve (playerIndex, input, output) {
@@ -87,7 +93,10 @@ class Trainer {
   }
 
   disapprove (playerIndex, input, output) {
-    this.updatePastSamples(playerIndex, -1);
+    //this.updatePastSamples(playerIndex, -1);
+    // also do a long random sample:
+    this.randomSample[playerIndex] = Array(4).fill(Math.random() * 2 - 1);
+    this.randomSampleCounter[playerIndex] = this.randomSampleDuration;
   }
   passDisapproveFunction () {
     return this.disapprove.bind(this);
@@ -106,13 +115,25 @@ class Trainer {
     }
   }
 
-  evaluate (playerIndex, input) {
-    let output = Array.from(this.models[playerIndex].predict(tf.tensor([input])));
-    if (output.length == 0) {
-      output = Array(4).fill(Math.random() * 2 - 1);
+  evaluate (playerIndex) {
+    // is a long random sample running?
+    if (this.randomSampleCounter[playerIndex] > 0) {
+      this.output[playerIndex] = this.randomSample[playerIndex];
+      this.randomSampleCounter[playerIndex] -= 1;
+      console.log('randommm...')
+    } else {
+      // if not, is it time for a random random sample?
+      if (Math.random() < this.randomSampleProb) { // for random output
+        this.output[playerIndex] = Array(4).fill(Math.random() * 2 - 1);
+      } else {
+        // no, so evaluate the model
+        let prediction = this.models[playerIndex].predict(tf.tensor([this.input[playerIndex]]));
+        prediction.data().then(data => {
+          this.output[playerIndex] = Array.from(data);
+        });
+      }
     }
-    //console.log('Output for player ' + playerIndex + ': ', output)
-    return output;
+
   }
 
   update (timestamp) {
@@ -128,7 +149,7 @@ class Trainer {
 
         // evaluating:
         if (this.input[playerIndex] != undefined) {
-          this.output[playerIndex] = this.evaluate(playerIndex, this.input[playerIndex]);
+          this.evaluate(playerIndex);
         }
 
         // add the current input and output to the pending samples.

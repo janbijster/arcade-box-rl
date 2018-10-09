@@ -6,7 +6,7 @@ class Environment {
 
   constructor () {
 
-    const groundWidth = 0.8*window.innerWidth;
+    const groundWidth = window.innerWidth - 80;
 
     // create an engine
     this.engine = MATTER.Engine.create()
@@ -37,8 +37,12 @@ class Environment {
     const rightOfcenter = { x: 2*window.innerWidth/3, y: 2*window.innerHeight/3 };
 
     const ground = MATTER.Bodies.rectangle(center.x, center.y + 20, groundWidth, 40, { isStatic: true });
+    const leftWall = MATTER.Bodies.rectangle(center.x - 0.5 * groundWidth - 20, center.y - 60, 40, 200, { isStatic: true });
+    const rightWall = MATTER.Bodies.rectangle(center.x + 0.5 * groundWidth + 20, center.y - 60, 40, 200, { isStatic: true });
     // add the ground to the world
     MATTER.World.add(this.engine.world, ground);
+    MATTER.World.add(this.engine.world, leftWall);
+    MATTER.World.add(this.engine.world, rightWall);
 
     // create bodies
     this.players = [

@@ -8,8 +8,17 @@ class Trainer {
     this.outputDim = 4;
     // when to start training?
     this.minimumNumberOfSamples = 10;
+    // how much samples to use?
+    this.maxNumberOfSamples = 1000;
+    this.lookBackFrames = 100;
+    this.lastTimestamp = null;
+    this.minValuation = 0.3;
 
     this.samples = [
+      [], // samples for p1
+      []  // samples for p2
+    ];
+    this.pendingSamples = [
       [], // samples for p1
       []  // samples for p2
     ];
@@ -44,19 +53,41 @@ class Trainer {
     return model;
   }
 
-  approve (player, input, output) {
-    // when the behavior is approved,the input-output pair is added to the stack of samples
-    this.samples[player].push({ input: input, output: output });
+  updatePastSamples(playerIndex, valuation) {
+    // update the recent samples with the new evaluation
+    let lastSample = this.pendingSamples[playerIndex].length - 1;
+    let firstSample = Math.max(lastSample - this.lookBackFrames, 0);
+
+    for (let i = firstSample; i < lastSample + 1; i++) {
+      let decay = i/this.lookBackFrames;
+      console.log('decay:', decay);
+      let sample = this.pendingSamples[playerIndex][i];
+      sample.valuation += decay * valuation;
+    }
+
+    // now check older samples if they have enough positive or negative valuation to be included
+    while (this.pendingSamples[playerIndex].length > this.lookBackFrames) {
+      let sample = this.pendingSamples[playerIndex].shift();
+      if (Math.abs(sample.valuation) > this.minValuation) {
+        this.samples[playerIndex].push(sample);
+        // but don't let the buffer get too big
+        if (this.samples[playerIndex].length > this.maxNumberOfSamples) {
+          this.samples[playerIndex].shift();
+        }
+      }
+    }
+
+  }
+
+  approve (playerIndex, input, output) {
+    this.updatePastSamples(playerIndex, 1);
   }
   passApproveFunction () {
     return this.approve.bind(this);
   }
 
-  disapprove (player, input, output) {
-    // when the behavior is disapproved, the network's weights are randomly perturbed
-
-    // alternative: add a sample to the stack with the output negated
-    this.samples[player].push({ input: input, output: output.map(val => -val) });
+  disapprove (playerIndex, input, output) {
+    this.updatePastSamples(playerIndex, -1);
   }
   passDisapproveFunction () {
     return this.disapprove.bind(this);
@@ -70,6 +101,7 @@ class Trainer {
         tf.tensor([input]), tf.tensor([output]), { batchSize: 1 }
       ).then(val => {
         this.modelLock[playerIndex] = false;
+        window.model = this.models[playerIndex];
       });
     }
   }
@@ -90,13 +122,17 @@ class Trainer {
         if (this.samples[playerIndex].length > this.minimumNumberOfSamples) {
           // enough samples to train. pick a sample:
           let randomSample = _.sample(this.samples[playerIndex]);
-          this.train(playerIndex, randomSample.input, randomSample.output);
+          let valuatedOutput = randomSample.output.map(el => randomSample.valuation * el);
+          this.train(playerIndex, randomSample.input, valuatedOutput);
         }
 
         // evaluating:
         if (this.input[playerIndex] != undefined) {
           this.output[playerIndex] = this.evaluate(playerIndex, this.input[playerIndex]);
         }
+
+        // add the current input and output to the pending samples.
+        this.pendingSamples[playerIndex].push({ input: this.input[playerIndex], output: this.output[playerIndex], valuation: 0 });
       });
     }
 

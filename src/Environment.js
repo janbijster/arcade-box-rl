@@ -68,10 +68,10 @@ class Environment {
     MATTER.Events.on(this.engine, 'afterUpdate', this.updateInput.bind(this));
   }
 
-  setInput(player, input) {
+  setInput(playerIndex, input) {
     // input is a 4-element array with torques for the motor joints for the player
-    if (input.length == 4) {
-      this.input[player] = input;
+    if (input != undefined && input.length == 4) {
+      this.input[playerIndex] = input;
     }
   }
 
@@ -100,7 +100,6 @@ class Environment {
       output.push(body.angle, body.angularVelocity)
     });
 
-    console.log(playerIndex, output);
     return output;
   }
 

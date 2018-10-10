@@ -3,12 +3,6 @@ import { Trainer } from './Trainer.js';
 import { InputManager } from './InputManager.js';
 
 const environment = new Environment();
-const trainer = new Trainer();
-const inputManager = new InputManager(
-  environment.passSetInputFunction(),
-  environment.passGetOutputFunction(),
-  trainer.passSetInputFunction(),
-  trainer.passGetOutputFunction(),
-  trainer.passApproveFunction(),
-  trainer.passDisapproveFunction()
-);
+const trainerPlayer1 = new Trainer();
+const trainerPlayer2 = new Trainer();
+const inputManager = new InputManager(environment, [trainerPlayer1, trainerPlayer2]);

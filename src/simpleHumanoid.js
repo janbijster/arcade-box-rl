@@ -6,11 +6,11 @@ class SimpleHumanoid {
     const startHeight = 50;
 
     const limbThickness = 20;
-    const legLength = 100;
-    const armLength = 80;
-    const gapSize = 20;
+    const legLength = 110;
+    const armLength = 100;
+    const gapSize = 15;
     const torsoWidth = 80;
-    const torsoHeight = 80;
+    const torsoHeight = 50;
 
     // calc params
     const torsoCenter = { x: position.x, y: position.y - startHeight - legLength - gapSize - 0.5*torsoHeight };
@@ -24,7 +24,6 @@ class SimpleHumanoid {
       position = { x: 0, y: 0 };
     }
 
-
     this.bodies = [
       // torso
       MATTER.Bodies.rectangle(torsoCenter.x, torsoCenter.y, torsoWidth, torsoHeight),
@@ -35,6 +34,7 @@ class SimpleHumanoid {
       MATTER.Bodies.rectangle(leftArmCenter.x, leftArmCenter.y, armLength, limbThickness),
       MATTER.Bodies.rectangle(rightArmCenter.x, rightArmCenter.y, armLength, limbThickness)
     ];
+
     this.constraints = [
       // left leg:
       MATTER.Constraint.create({
@@ -43,7 +43,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight },
-        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
+        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
+        render: { visible: false }
       }),
       MATTER.Constraint.create({
         bodyA: this.bodies[0],
@@ -51,7 +52,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth + limbThickness, y: 0.5*torsoHeight },
-        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
+        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
+        render: { visible: false }
       }),
       // right leg:
       MATTER.Constraint.create({
@@ -60,7 +62,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight },
-        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
+        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
+        render: { visible: false }
       }),
       MATTER.Constraint.create({
         bodyA: this.bodies[0],
@@ -68,7 +71,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: 0.5*torsoWidth - limbThickness, y: 0.5*torsoHeight },
-        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness }
+        pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
+        render: { visible: false }
       }),
       // left arm:
       MATTER.Constraint.create({
@@ -77,7 +81,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight },
-        pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 }
+        pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 },
+        render: { visible: false }
       }),
       MATTER.Constraint.create({
         bodyA: this.bodies[0],
@@ -85,7 +90,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
-        pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 }
+        pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 },
+        render: { visible: false }
       }),
       // right arm:
       MATTER.Constraint.create({
@@ -94,7 +100,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight },
-        pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 }
+        pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 },
+        render: { visible: false }
       }),
       MATTER.Constraint.create({
         bodyA: this.bodies[0],
@@ -102,7 +109,8 @@ class SimpleHumanoid {
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
         pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
-        pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 }
+        pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 },
+        render: { visible: false }
       })
     ];
 

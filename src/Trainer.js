@@ -93,7 +93,7 @@ class Trainer {
   }
 
   disapprove (playerIndex, input, output) {
-    //this.updatePastSamples(playerIndex, -1);
+    this.updatePastSamples(playerIndex, -0.5);
     // also do a long random sample:
     this.randomSample[playerIndex] = Array(4).fill(Math.random() * 2 - 1);
     this.randomSampleCounter[playerIndex] = this.randomSampleDuration;

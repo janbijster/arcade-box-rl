@@ -104,6 +104,13 @@ class Environment {
       output.push(body.angle, body.angularVelocity)
     });
 
+    // override: make new simple output with only the angles
+    output = Array(5).fill(0);
+    output.push(torso.angle, 0);
+    this.players[playerIndex].bodies.slice(1).forEach(body => {
+      output.push(body.angle - torso.angle, 0);
+    });
+
     return output;
   }
 

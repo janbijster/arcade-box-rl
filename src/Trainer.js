@@ -2,7 +2,10 @@ import * as tf from '@tensorflow/tfjs';
 const _ = require('lodash');
 
 class Trainer {
-  constructor () {
+  constructor (playerIndex, renderEffectContainer) {
+
+    this.playerIndex = playerIndex;
+    this.renderEffect = renderEffectContainer.passRenderEffectFunction();
 
     this.inputDim = 15;
     this.outputDim = 4;
@@ -10,15 +13,17 @@ class Trainer {
     this.minimumNumberOfSamples = 10;
     // how much samples to remember?
     this.maxNumberOfSamples = 1000;
-
-    this.keepSamplesFraction = 0.1;
+    // keep only this fraction of samples
+    this.keepSamplesFraction = 0.2;
+    // an approval or disapproval now is applied to the last # frames:
     this.lookBackFrames = 60;
-    this.lastTimestamp = null;
+    // throw away samples with a lower absolute valuation than
     this.minValuation = 0.3;
-    this.randomSampleProb = 0.01;
-    this.randomSampleCounter = [0, 0];
-    this.randomSample = [[], []];
-    this.randomSampleDuration = 60;
+
+    // periodic random samples:
+    this.randomSample = null;
+    this.randomSampleOnDuration = 1 * 1000; // in milliseconds
+    this.randomSampleOffDuration = 1 * 1000; // in milliseconds
 
     this.samples = [];
     this.pendingSamples = [];
@@ -30,9 +35,28 @@ class Trainer {
     this.output = null;
 
     window.requestAnimationFrame(this.update.bind(this));
+    window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
   }
 
-  makeModel() {
+  startRandomSample () {
+    this.randomSample = Array(4).fill(Math.random() * 2 -1);
+    window.setTimeout(this.stopRandomSample.bind(this), this.randomSampleOnDuration);
+    this.renderEffect({
+      player: this.playerIndex,
+      event: 'RANDOM_SAMPLE_ON'
+    });
+  }
+
+  stopRandomSample () {
+    this.randomSample = null;
+    window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
+    this.renderEffect({
+      player: this.playerIndex,
+      event: 'RANDOM_SAMPLE_OFF'
+    });
+  }
+
+  makeModel () {
     let model = tf.sequential();
     let layer1Dim = Math.floor(0.5 * (this.inputDim + this.outputDim));
     model.add(tf.layers.dense({units: layer1Dim, inputShape: [this.inputDim], activation: 'relu'}));
@@ -47,7 +71,7 @@ class Trainer {
     return model;
   }
 
-  updatePastSamples(valuation) {
+  updatePastSamples (valuation) {
     // update the recent samples with the new evaluation
     let lastSample = this.pendingSamples.length - 1;
     let firstSample = lastSample - this.lookBackFrames;
@@ -82,10 +106,7 @@ class Trainer {
   }
 
   disapprove (input, output) {
-    this.updatePastSamples(-0.5);
-    // also do a long random sample:
-    this.randomSample = Array(4).fill(Math.random() * 2 - 1);
-    this.randomSampleCounter = this.randomSampleDuration;
+    this.updatePastSamples(-1);
   }
   passDisapproveFunction () {
     return this.disapprove.bind(this);
@@ -99,27 +120,20 @@ class Trainer {
         tf.tensor([input]), tf.tensor([output]), { batchSize: 1 }
       ).then(val => {
         this.modelLock = false;
-        //window.model = this.model;
       });
     }
   }
 
   evaluate () {
     // is a long random sample running?
-    if (this.randomSampleCounter > 0) {
+    if (this.randomSample != null) {
       this.output = this.randomSample;
-      this.randomSampleCounter -= 1;
     } else {
-      // if not, is it time for a random random sample?
-      if (Math.random() < this.randomSampleProb) { // for random output
-        this.output = Array(4).fill(Math.random() * 2 - 1);
-      } else {
-        // no, so evaluate the model
-        let prediction = this.model.predict(tf.tensor([this.input]));
-        prediction.data().then(data => {
-          this.output = Array.from(data);
-        });
-      }
+      // if not, evaluate the model
+      let prediction = this.model.predict(tf.tensor([this.input]));
+      prediction.data().then(data => {
+        this.output = Array.from(data);
+      });
     }
   }
 

@@ -3,6 +3,6 @@ import { Trainer } from './Trainer.js';
 import { InputManager } from './InputManager.js';
 
 const environment = new Environment();
-const trainerPlayer1 = new Trainer();
-const trainerPlayer2 = new Trainer();
-const inputManager = new InputManager(environment, [trainerPlayer1, trainerPlayer2]);
+const trainerPlayer0 = new Trainer(0, environment); // id, object containing renderEffect function
+const trainerPlayer1 = new Trainer(1, environment); // id, object containing renderEffect function
+const inputManager = new InputManager(environment, [trainerPlayer0, trainerPlayer1]); // environment, trainersArray

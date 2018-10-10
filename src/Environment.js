@@ -18,6 +18,7 @@ class Environment {
         element: document.body,
         engine: this.engine
     });
+    this.render.options.wireframes = false;
 
     this.engine.world.bounds.max.x = window.width;
     this.engine.world.bounds.max.y = window.height;
@@ -70,6 +71,24 @@ class Environment {
       [0, 0, 0, 0]
     ];
     MATTER.Events.on(this.engine, 'afterUpdate', this.updateInput.bind(this));
+  }
+
+  renderEffect (effectInfo) {
+    console.log('Render effect for:', effectInfo);
+    if (effectInfo.event == 'RANDOM_SAMPLE_ON') {
+      this.bodies[effectInfo.player].bodies.forEach(body => {
+        body.render.fillStyle = '#4444ff';
+      });
+    }
+    if (effectInfo.event == 'RANDOM_SAMPLE_OFF') {
+      this.bodies[effectInfo.player].bodies.forEach(body => {
+        body.render.fillStyle = '#aaaaff';
+      });
+    }
+
+  }
+  passRenderEffectFunction () {
+    return this.renderEffect.bind(this);
   }
 
   setInput(playerIndex, input) {

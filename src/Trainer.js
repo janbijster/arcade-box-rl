@@ -9,23 +9,25 @@ class Trainer {
     this.renderEffect = renderEffectContainer.passRenderEffectFunction();
 
     this.inputDim = 15;
-    this.outputDim = 4;
+    //this.outputDim = 4; // <- defined in CONFIG.actionDim
+
+    // random samples:
+    this.randomSample = null;
+    this.randomSampleOnDuration = 1 * 1000; // in milliseconds
+    this.randomSampleOffDuration = 1 * 1000; // in milliseconds
+
     // when to start training?
     this.minimumNumberOfSamples = 10;
     // how much samples to remember?
     this.maxNumberOfSamples = 1000;
-    // keep only this fraction of samples
-    this.keepSamplesFraction = 0.2;
-    // an approval or disapproval now is applied to the last # frames:
-    this.lookBackFrames = 60;
-    // throw away samples with a lower absolute valuation than
-    this.minValuation = 0.3;
+    // keep this fraction of samples: (not neccessary to keep every frame)
+    this.keepFraction = 0.2;
+    // training batch size:
+    this.batchSize = 8;
+    // maximum number of epochs with the same data:
+    this.maxEpochs = 50;
 
-    // periodic random samples:
-    this.randomSample = null;
-    this.randomSampleOnDuration = 1 * 1000; // in milliseconds
-    this.randomSampleOffDuration = 1 * 1000; // in milliseconds
-    this.randomSampleOffEventId = null;
+    this.samplesTrainedSinceNewData = 0;
 
     this.samples = [];
     this.pendingSamples = [];
@@ -41,6 +43,8 @@ class Trainer {
   }
 
   startRandomSample () {
+    // clear previous pending samples
+    this.pendingSamples = [];
     this.randomSample = Array(CONFIG.actionDim).fill(Math.random() * 2 -1);
     window.setTimeout(this.stopRandomSample.bind(this), this.randomSampleOnDuration);
     this.renderEffect({
@@ -51,7 +55,6 @@ class Trainer {
 
   stopRandomSample () {
     this.randomSample = null;
-    //window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
     this.renderEffect({
       player: this.playerIndex,
       event: 'RANDOM_SAMPLE_OFF'
@@ -60,11 +63,11 @@ class Trainer {
 
   makeModel () {
     let model = tf.sequential();
-    let layer1Dim = Math.floor(0.5 * (this.inputDim + this.outputDim));
+    let layer1Dim = Math.floor(0.5 * (this.inputDim + CONFIG.actionDim));
     model.add(tf.layers.dense({units: layer1Dim, inputShape: [this.inputDim], activation: 'relu'}));
-    model.add(tf.layers.dense({units: this.outputDim, activation: 'softsign'}));
+    model.add(tf.layers.dense({units: CONFIG.actionDim, activation: 'softsign'}));
     model.compile({
-      optimizer: 'adam',
+      optimizer: 'sgd',
       loss: 'meanSquaredError',
       metrics: ['accuracy'],
     });
@@ -73,35 +76,19 @@ class Trainer {
     return model;
   }
 
-  updatePastSamples (valuation) {
-    // update the recent samples with the new evaluation
-    let lastSample = this.pendingSamples.length - 1;
-    let firstSample = lastSample - this.lookBackFrames;
-
-    for (let i = Math.max(firstSample, 0); i < lastSample + 1; i++) {
-      let decay = (i - firstSample)/this.lookBackFrames;
-      let sample = this.pendingSamples[i];
-      sample.valuation += decay * valuation;
-    }
-
-    // now check older samples if they have enough positive or negative valuation to be included
-    while (this.pendingSamples.length > this.lookBackFrames) {
-      let sample = this.pendingSamples.shift();
-      if (Math.abs(sample.valuation) > this.minValuation) {
-        if (Math.random() < this.keepSamplesFraction) {
-          this.samples.push(sample);
-          // but don't let the buffer get too big
-          if (this.samples.length > this.maxNumberOfSamples) {
-            this.samples.shift();
-          }
-        }
-      }
-    }
-    console.log(this.samples.length + ' samples in buffer...');
-  }
-
   approve (input, output) {
-    this.updatePastSamples(1);
+    // user approves the last/current random behavior, so add the pendingSamples
+    // to the samples array for training
+    let keepNumSamples =  Math.round(this.pendingSamples.length * this.keepFraction);
+    let keepSamples = _.sampleSize(this.pendingSamples, keepNumSamples);
+    this.samples.push(...keepSamples);
+    // throw away the first few samples if the array gets too big
+    if (this.samples.length > this.maxNumberOfSamples) {
+          this.samples = this.samples.slice(-this.maxNumberOfSamples)
+    }
+    // new data, so reset this counter:
+    this.samplesTrainedSinceNewData = 0;
+    // the pendingSamples array is not emptied, so the user can approve the same data multiple times for more weight
   }
   passApproveFunction () {
     return this.approve.bind(this);
@@ -119,8 +106,9 @@ class Trainer {
     if (!this.modelLock) {
       this.modelLock = true;
       //console.log('now training with input: ', input, 'and output:', output);
+      this.renderEffect({ player: this.playerIndex, event: "TRAINING" });
       this.model.fit(
-        tf.tensor([input]), tf.tensor([output]), { batchSize: 1 }
+        tf.tensor(input), tf.tensor(output), { batchSize: this.batchSize }
       ).then(val => {
         this.modelLock = false;
       });
@@ -144,11 +132,18 @@ class Trainer {
     if (this.model != undefined) {
 
       // training:
-      if (this.samples.length > this.minimumNumberOfSamples) {
-        // enough samples to train. pick a sample:
-        let randomSample = _.sample(this.samples);
-        let valuatedOutput = randomSample.output.map(el => randomSample.valuation * el);
-        this.train(randomSample.input, valuatedOutput);
+      if (this.samples.length > this.minimumNumberOfSamples && this.samples.length > this.batchSize) {
+        // enough samples to train. Grap a random batch:
+        if (this.samplesTrainedSinceNewData / this.samples.length > this.maxEpochs) {
+          // not training, known samples have been used enough.
+          this.renderEffect({ player: this.playerIndex, event: "NOT_TRAINING" })
+        } else {
+          let randomSamples = _.sampleSize(this.samples, this.batchSize);
+          let inputSamples = randomSamples.map(sample => sample.input);
+          let outputSamples = randomSamples.map(sample => sample.output);
+          this.train(inputSamples, outputSamples);
+          this.samplesTrainedSinceNewData += this.batchSize;
+        }
       }
 
       // evaluating:
@@ -156,9 +151,10 @@ class Trainer {
         this.evaluate();
       }
 
-      // add the current input and output to the pending samples.
-      this.pendingSamples.push({ input: this.input, output: this.output, valuation: 0 });
-
+      // if performing a random action, add the current in- and output to the pending samples.
+      if (this.randomSample != null) {
+        this.pendingSamples.push({ input: this.input, output: this.output });
+      }
     }
 
     window.requestAnimationFrame(this.update.bind(this));

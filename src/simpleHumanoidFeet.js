@@ -10,12 +10,13 @@ class SimpleHumanoidFeet {
     const armLength = 90;
     const gapSize = 10;
     const torsoWidth = 80;
-    const torsoHeight = 140;
+    const torsoHeight = 100;
+    const headHeight = 30;
 
     this.jointTorqueAmplification = [1.5, 1.5, 2, 2];
 
     // calc params
-    const torsoCenter = { x: position.x, y: position.y - startHeight - footLength - gapSize - 0.5*torsoHeight };
+    const torsoCenter = { x: position.x, y: position.y - startHeight - footLength - gapSize - 0.5 * torsoHeight - 0.5*headHeight};
     const leftLegCenter = { x: position.x - 0.5*torsoWidth + 0.5*limbThickness, y: position.y - startHeight - 0.5*footLength };
     const rightLegCenter = { x: 2*position.x - leftLegCenter.x, y: leftLegCenter.y};
     const leftArmCenter = { x: position.x - 0.5*torsoWidth - gapSize - 0.5*armLength, y: position.y - startHeight - footLength - gapSize - torsoHeight + 0.5 * limbThickness };
@@ -30,7 +31,7 @@ class SimpleHumanoidFeet {
 
     this.bodies = [
       // torso
-      MATTER.Bodies.rectangle(torsoCenter.x, torsoCenter.y, torsoWidth, torsoHeight),
+      MATTER.Bodies.rectangle(torsoCenter.x, torsoCenter.y, torsoWidth, torsoHeight+headHeight),
       // feet
       MATTER.Bodies.rectangle(leftLegCenter.x, leftLegCenter.y, footLength, limbThickness, feetOptions),
       MATTER.Bodies.rectangle(rightLegCenter.x, rightLegCenter.y, footLength, limbThickness, feetOptions),
@@ -51,7 +52,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[1],
         stiffness: 1,
         length: limbThickness + gapSize,
-        pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight },
+        pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: 0, y: 0 },
         render: constraintRenderOptions
       }),
@@ -60,7 +61,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[1],
         stiffness: 1,
         length: limbThickness + gapSize,
-        pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight },
+        pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: limbThickness, y: 0 },
         render: constraintRenderOptions
       }),
@@ -70,7 +71,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[2],
         stiffness: 1,
         length: limbThickness + gapSize,
-        pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight },
+        pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: 0, y: 0 },
         render: constraintRenderOptions
       }),
@@ -79,7 +80,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[2],
         stiffness: 1,
         length: limbThickness + gapSize,
-        pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight },
+        pointA: { x: 0.5*torsoWidth, y: 0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: -limbThickness, y: 0 },
         render: constraintRenderOptions
       }),
@@ -89,7 +90,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[3],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight },
+        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 },
         render: constraintRenderOptions
       }),
@@ -98,7 +99,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[3],
         stiffness: 1,
         length: 1*limbThickness + gapSize,
-        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
+        pointA: { x: -0.5*torsoWidth, y: -0.5*torsoHeight + 0.5*headHeight + limbThickness },
         pointB: { x: 0.5*armLength - 0.5*limbThickness, y: 0 },
         render: constraintRenderOptions
       }),
@@ -108,7 +109,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[4],
         stiffness: 1,
         length: 0.5* limbThickness + gapSize,
-        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight },
+        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight + 0.5*headHeight },
         pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 },
         render: constraintRenderOptions
       }),
@@ -117,7 +118,7 @@ class SimpleHumanoidFeet {
         bodyB: this.bodies[4],
         stiffness: 1,
         length: 1*limbThickness + gapSize,
-        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight + limbThickness },
+        pointA: { x: 0.5*torsoWidth, y: -0.5*torsoHeight + 0.5*headHeight + limbThickness },
         pointB: { x: -0.5*armLength + 0.5*limbThickness, y: 0 },
         render: constraintRenderOptions
       })

@@ -98,6 +98,7 @@ class Environment {
     if (effectInfo.event == 'RANDOM_SAMPLE_OFF') {
       this.setColors(effectInfo.player, 'main');
     }
+    console.log(effectInfo.player, effectInfo.event);
   }
   passRenderEffectFunction () {
     return this.renderEffect.bind(this);
@@ -136,7 +137,11 @@ class Environment {
     });
 
     // override: make new simple output with only the angles
-    output = Array(5).fill(0);
+    output = [
+      (torso.position.x - this.normCenter.x) / this.normScale.x,
+      0, 0, 0,
+      (otherTorso.position.x - this.normCenter.x) / this.normScale.x
+    ];
     output.push(torso.angle, 0);
     this.players[playerIndex].bodies.slice(1).forEach(body => {
       output.push(body.angle - torso.angle, 0);

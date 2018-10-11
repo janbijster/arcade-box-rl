@@ -1,12 +1,12 @@
 const MATTER = require('matter-js');
 import { SimpleBody } from './SimpleBody.js';
-import { SimpleHumanoid } from './SimpleHumanoid.js';
+import { SimpleHumanoidFeet } from './SimpleHumanoidFeet.js';
 const COLORS = require('./colors.json');
+const CONFIG = require('./config.json');
 
 class Environment {
 
   constructor () {
-
 
     const groundWidth = window.innerWidth - 80;
 
@@ -36,7 +36,7 @@ class Environment {
 
     // create a ground
     const groundRenderOptions = { fillStyle: COLORS.environment[1].light };
-    const groundOptions = { isStatic: true, render: groundRenderOptions };
+    const groundOptions = { isStatic: true, friction: 1, render: groundRenderOptions };
 
     const center = { x: window.innerWidth/2, y: 2*window.innerHeight/3 };
     const leftOfcenter = { x: window.innerWidth/3, y: 2*window.innerHeight/3 };
@@ -52,12 +52,14 @@ class Environment {
 
     // create bodies
     this.players = [
-      new SimpleHumanoid(leftOfcenter),
-      new SimpleHumanoid(rightOfcenter)
+      new SimpleHumanoidFeet(leftOfcenter),
+      new SimpleHumanoidFeet(rightOfcenter)
     ];
 
     this.bodies = this.players.map(el => el.composite);
-    [0, 1].forEach(playerIndex => this.setColors(playerIndex, 'light'));
+    [0, 1].forEach(playerIndex => {
+      this.renderEffect({player: playerIndex, event: 'RANDOM_SAMPLE_OFF'});
+    });
 
     // add all of the bodies to the world
     MATTER.World.add(this.engine.world, this.bodies);
@@ -91,10 +93,10 @@ class Environment {
   renderEffect (effectInfo) {
     //console.log('Render effect for:', effectInfo);
     if (effectInfo.event == 'RANDOM_SAMPLE_ON') {
-      this.setColors(effectInfo.player, 'main', [this.bodies[effectInfo.player].bodies[0]]);
+      this.setColors(effectInfo.player, 'light');
     }
     if (effectInfo.event == 'RANDOM_SAMPLE_OFF') {
-      this.setColors(effectInfo.player, 'light');
+      this.setColors(effectInfo.player, 'main');
     }
   }
   passRenderEffectFunction () {
@@ -102,8 +104,8 @@ class Environment {
   }
 
   setInput(playerIndex, input) {
-    // input is a 4-element array with torques for the motor joints for the player
-    if (input != undefined && input.length == 4) {
+    // input is a actionDim-element array with torques for the motor joints for the player
+    if (input != undefined && input.length == CONFIG.actionDim) {
       this.input[playerIndex] = input;
     }
   }

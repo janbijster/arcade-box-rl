@@ -1,5 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 const _ = require('lodash');
+const CONFIG = require('./config.json');
 
 class Trainer {
   constructor (playerIndex, renderEffectContainer) {
@@ -24,6 +25,7 @@ class Trainer {
     this.randomSample = null;
     this.randomSampleOnDuration = 1 * 1000; // in milliseconds
     this.randomSampleOffDuration = 1 * 1000; // in milliseconds
+    this.randomSampleOffEventId = null;
 
     this.samples = [];
     this.pendingSamples = [];
@@ -39,7 +41,7 @@ class Trainer {
   }
 
   startRandomSample () {
-    this.randomSample = Array(4).fill(Math.random() * 2 -1);
+    this.randomSample = Array(CONFIG.actionDim).fill(Math.random() * 2 -1);
     window.setTimeout(this.stopRandomSample.bind(this), this.randomSampleOnDuration);
     this.renderEffect({
       player: this.playerIndex,
@@ -172,7 +174,7 @@ class Trainer {
   }
 
   getOutput () {
-    // output for each player is a 4-element array with torques for the joints
+    // output for each player is a actionDim-element array with torques for the joints
     return this.output;
   }
   passGetOutputFunction () {

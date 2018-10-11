@@ -28,6 +28,7 @@
   "dependencies": {
     "@tensorflow/tfjs": "^0.13.1",
     "lodash": "^4.17.11",
-    "matter-js": "^0.14.2"
+    "matter-js": "^0.14.2",
+    "poly-decomp": "^0.3.0"
   }
 }

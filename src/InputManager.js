@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const CONFIG = require('./config.json');
 
 class InputManager {
   constructor (environment, trainersArray) {
@@ -13,8 +14,8 @@ class InputManager {
     this.disapprove = trainersArray.map(trainer => trainer.passDisapproveFunction());
 
     this.environmentInput = [
-      Array(4).fill(0),
-      Array(4).fill(0)
+      Array(CONFIG.actionDim).fill(0),
+      Array(CONFIG.actionDim).fill(0)
     ];
     this.trainerInput = [
       Array(15).fill(0),

@@ -1,10 +1,12 @@
 const MATTER = require('matter-js');
 import { SimpleBody } from './SimpleBody.js';
 import { SimpleHumanoid } from './SimpleHumanoid.js';
+const COLORS = require('./colors.json');
 
 class Environment {
 
   constructor () {
+
 
     const groundWidth = window.innerWidth - 80;
 
@@ -33,13 +35,16 @@ class Environment {
     resizeCanvas();
 
     // create a ground
+    const groundRenderOptions = { fillStyle: COLORS.environment[1].light };
+    const groundOptions = { isStatic: true, render: groundRenderOptions };
+
     const center = { x: window.innerWidth/2, y: 2*window.innerHeight/3 };
     const leftOfcenter = { x: window.innerWidth/3, y: 2*window.innerHeight/3 };
     const rightOfcenter = { x: 2*window.innerWidth/3, y: 2*window.innerHeight/3 };
 
-    const ground = MATTER.Bodies.rectangle(center.x, center.y + 20, groundWidth, 40, { isStatic: true });
-    const leftWall = MATTER.Bodies.rectangle(center.x - 0.5 * groundWidth - 20, center.y - 60, 40, 200, { isStatic: true });
-    const rightWall = MATTER.Bodies.rectangle(center.x + 0.5 * groundWidth + 20, center.y - 60, 40, 200, { isStatic: true });
+    const ground = MATTER.Bodies.rectangle(center.x, center.y + 20, groundWidth, 40, groundOptions);
+    const leftWall = MATTER.Bodies.rectangle(center.x - 0.5 * groundWidth - 20, center.y - 60, 40, 200, groundOptions);
+    const rightWall = MATTER.Bodies.rectangle(center.x + 0.5 * groundWidth + 20, center.y - 60, 40, 200, groundOptions);
     // add the ground to the world
     MATTER.World.add(this.engine.world, ground);
     MATTER.World.add(this.engine.world, leftWall);
@@ -52,6 +57,8 @@ class Environment {
     ];
 
     this.bodies = this.players.map(el => el.composite);
+    [0, 1].forEach(playerIndex => this.setColors(playerIndex, 'light'));
+
     // add all of the bodies to the world
     MATTER.World.add(this.engine.world, this.bodies);
 
@@ -73,19 +80,22 @@ class Environment {
     MATTER.Events.on(this.engine, 'afterUpdate', this.updateInput.bind(this));
   }
 
+  setColors(playerIndex, tint, excludeBodies=[]) {
+    this.bodies[playerIndex].bodies.forEach(body => {
+      if (!excludeBodies.includes(body)) {
+        body.render.fillStyle = COLORS.players[playerIndex][tint];
+      }
+    });
+  }
+
   renderEffect (effectInfo) {
-    console.log('Render effect for:', effectInfo);
+    //console.log('Render effect for:', effectInfo);
     if (effectInfo.event == 'RANDOM_SAMPLE_ON') {
-      this.bodies[effectInfo.player].bodies.forEach(body => {
-        body.render.fillStyle = '#4444ff';
-      });
+      this.setColors(effectInfo.player, 'main', [this.bodies[effectInfo.player].bodies[0]]);
     }
     if (effectInfo.event == 'RANDOM_SAMPLE_OFF') {
-      this.bodies[effectInfo.player].bodies.forEach(body => {
-        body.render.fillStyle = '#aaaaff';
-      });
+      this.setColors(effectInfo.player, 'light');
     }
-
   }
   passRenderEffectFunction () {
     return this.renderEffect.bind(this);

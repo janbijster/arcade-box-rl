@@ -5,12 +5,12 @@ class SimpleHumanoid {
     // setup params
     const startHeight = 50;
 
-    const limbThickness = 20;
-    const legLength = 110;
-    const armLength = 100;
-    const gapSize = 15;
+    const limbThickness = 25;
+    const legLength = 90;
+    const armLength = 70;
+    const gapSize = 10;
     const torsoWidth = 80;
-    const torsoHeight = 50;
+    const torsoHeight = 80;
 
     // calc params
     const torsoCenter = { x: position.x, y: position.y - startHeight - legLength - gapSize - 0.5*torsoHeight };
@@ -41,7 +41,7 @@ class SimpleHumanoid {
         bodyA: this.bodies[0],
         bodyB: this.bodies[1],
         stiffness: 1,
-        length: 0.5* limbThickness + gapSize,
+        length: 0.5 * limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
         render: { visible: false }
@@ -50,7 +50,7 @@ class SimpleHumanoid {
         bodyA: this.bodies[0],
         bodyB: this.bodies[1],
         stiffness: 1,
-        length: 0.5* limbThickness + gapSize,
+        length: 1.0 * limbThickness + gapSize,
         pointA: { x: -0.5*torsoWidth + limbThickness, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
         render: { visible: false }
@@ -69,7 +69,7 @@ class SimpleHumanoid {
         bodyA: this.bodies[0],
         bodyB: this.bodies[2],
         stiffness: 1,
-        length: 0.5* limbThickness + gapSize,
+        length: 1.0 * limbThickness + gapSize,
         pointA: { x: 0.5*torsoWidth - limbThickness, y: 0.5*torsoHeight },
         pointB: { x: 0, y: -0.5*legLength + 0.5*limbThickness },
         render: { visible: false }

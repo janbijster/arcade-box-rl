@@ -35,7 +35,7 @@ class Trainer {
     this.output = null;
 
     window.requestAnimationFrame(this.update.bind(this));
-    window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
+    //window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
   }
 
   startRandomSample () {
@@ -49,7 +49,7 @@ class Trainer {
 
   stopRandomSample () {
     this.randomSample = null;
-    window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
+    //window.setTimeout(this.startRandomSample.bind(this), this.randomSampleOffDuration);
     this.renderEffect({
       player: this.playerIndex,
       event: 'RANDOM_SAMPLE_OFF'
@@ -106,7 +106,8 @@ class Trainer {
   }
 
   disapprove (input, output) {
-    this.updatePastSamples(-1);
+    //this.updatePastSamples(-1);
+    this.startRandomSample();
   }
   passDisapproveFunction () {
     return this.disapprove.bind(this);

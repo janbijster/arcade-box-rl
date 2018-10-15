@@ -13,7 +13,7 @@ class Trainer {
 
     // random samples:
     this.randomSample = null;
-    this.randomSampleOnDuration = 1 * 1000; // in milliseconds
+    this.randomSampleOnDuration = 0.2 * 1000; // in milliseconds
     this.randomSampleOffDuration = 1 * 1000; // in milliseconds
 
     // when to start training?
@@ -21,13 +21,16 @@ class Trainer {
     // how much samples to remember?
     this.maxNumberOfSamples = 1000;
     // keep this fraction of samples: (not neccessary to keep every frame)
-    this.keepFraction = 0.2;
+    this.keepFraction = 1;
     // training batch size:
     this.batchSize = 8;
     // maximum number of epochs with the same data:
     this.maxEpochs = 50;
 
     this.samplesTrainedSinceNewData = 0;
+    this.lossNotImproving = false;
+    this.lastLoss = 1;
+    this.lossMovingAverageSpeed = 0.1;
 
     this.samples = [];
     this.pendingSamples = [];
@@ -67,7 +70,7 @@ class Trainer {
     model.add(tf.layers.dense({units: layer1Dim, inputShape: [this.inputDim], activation: 'relu'}));
     model.add(tf.layers.dense({units: CONFIG.actionDim, activation: 'softsign'}));
     model.compile({
-      optimizer: 'sgd',
+      optimizer: 'adam',
       loss: 'meanSquaredError',
       metrics: ['accuracy'],
     });
@@ -88,6 +91,9 @@ class Trainer {
     }
     // new data, so reset this counter:
     this.samplesTrainedSinceNewData = 0;
+    // also reset the value that checks if the loss was not improving
+    this.lossNotImproving = false;
+    this.lastLoss = 1;
     // the pendingSamples array is not emptied, so the user can approve the same data multiple times for more weight
   }
   passApproveFunction () {
@@ -109,8 +115,21 @@ class Trainer {
       this.renderEffect({ player: this.playerIndex, event: "TRAINING" });
       this.model.fit(
         tf.tensor(input), tf.tensor(output), { batchSize: this.batchSize }
-      ).then(val => {
+      ).then(history => {
         this.modelLock = false;
+        console.log('MA loss:', this.lastLoss);
+        console.log('New loss:', history.history.loss[0]);
+        if (this.samplesTrainedSinceNewData / this.samples.length > this.maxEpochs) {
+          console.log('Stop training: max epochs with the same data reached.');
+          this.renderEffect({ player: this.playerIndex, event: "STOP_TRAINING" });
+        }
+        if (history.history.loss[0] > this.lastLoss) {
+          this.lossNotImproving = true;
+          console.log('Stop training: loss not improving');
+          this.renderEffect({ player: this.playerIndex, event: "STOP_TRAINING" });
+        }
+        this.lastLoss = (1 - this.lossMovingAverageSpeed) * this.lastLoss + this.lossMovingAverageSpeed * history.history.loss[0];
+
       });
     }
   }
@@ -133,10 +152,10 @@ class Trainer {
 
       // training:
       if (this.samples.length > this.minimumNumberOfSamples && this.samples.length > this.batchSize) {
-        // enough samples to train. Grap a random batch:
-        if (this.samplesTrainedSinceNewData / this.samples.length > this.maxEpochs) {
+        // enough samples to train. Grab a random batch:
+        if (this.samplesTrainedSinceNewData / this.samples.length > this.maxEpochs || this.lossNotImproving) {
           // not training, known samples have been used enough.
-          this.renderEffect({ player: this.playerIndex, event: "NOT_TRAINING" })
+
         } else {
           let randomSamples = _.sampleSize(this.samples, this.batchSize);
           let inputSamples = randomSamples.map(sample => sample.input);

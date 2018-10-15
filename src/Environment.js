@@ -1,6 +1,7 @@
 const MATTER = require('matter-js');
 import { SimpleBody } from './SimpleBody.js';
 import { SimpleHumanoidFeet } from './SimpleHumanoidFeet.js';
+import { SimpleHumanoidLegsOnly } from './SimpleHumanoidLegsOnly.js';
 const COLORS = require('./colors.json');
 const CONFIG = require('./config.json');
 
@@ -8,7 +9,8 @@ class Environment {
 
   constructor () {
 
-    const groundWidth = window.innerWidth - 80;
+    const groundWidth = window.innerWidth - 180;
+    const groundWallHeight = 60;
 
     // create an engine
     this.engine = MATTER.Engine.create()
@@ -43,8 +45,8 @@ class Environment {
     const rightOfcenter = { x: 2*window.innerWidth/3, y: 2*window.innerHeight/3 };
 
     const ground = MATTER.Bodies.rectangle(center.x, center.y + 20, groundWidth, 40, groundOptions);
-    const leftWall = MATTER.Bodies.rectangle(center.x - 0.5 * groundWidth - 20, center.y - 60, 40, 200, groundOptions);
-    const rightWall = MATTER.Bodies.rectangle(center.x + 0.5 * groundWidth + 20, center.y - 60, 40, 200, groundOptions);
+    const leftWall = MATTER.Bodies.rectangle(center.x - 0.5 * groundWidth - 20, center.y - (0.5*groundWallHeight - 40), 40, groundWallHeight, groundOptions);
+    const rightWall = MATTER.Bodies.rectangle(center.x + 0.5 * groundWidth + 20, center.y - (0.5*groundWallHeight - 40), 40, groundWallHeight, groundOptions);
     // add the ground to the world
     MATTER.World.add(this.engine.world, ground);
     MATTER.World.add(this.engine.world, leftWall);
@@ -52,6 +54,8 @@ class Environment {
 
     // create bodies
     this.players = [
+      //new SimpleHumanoidLegsOnly(leftOfcenter),
+      //new SimpleHumanoidLegsOnly(rightOfcenter)
       new SimpleHumanoidFeet(leftOfcenter),
       new SimpleHumanoidFeet(rightOfcenter)
     ];

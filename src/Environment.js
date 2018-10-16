@@ -1,7 +1,7 @@
 const MATTER = require('matter-js');
 import { SimpleBody } from './SimpleBody.js';
 import { SimpleHumanoidFeet } from './SimpleHumanoidFeet.js';
-import { SimpleHumanoidLegsOnly } from './SimpleHumanoidLegsOnly.js';
+import { SimpleTriangleArms } from './SimpleTriangleArms.js';
 const COLORS = require('./colors.json');
 const CONFIG = require('./config.json');
 
@@ -10,7 +10,7 @@ class Environment {
   constructor () {
 
     const groundWidth = window.innerWidth - 180;
-    const groundWallHeight = 60;
+    const groundWallHeight = 160;
 
     // create an engine
     this.engine = MATTER.Engine.create()
@@ -38,7 +38,7 @@ class Environment {
 
     // create a ground
     const groundRenderOptions = { fillStyle: COLORS.environment[1].light };
-    const groundOptions = { isStatic: true, friction: 1, render: groundRenderOptions };
+    const groundOptions = { isStatic: true, friction: 0, render: groundRenderOptions };
 
     const center = { x: window.innerWidth/2, y: 2*window.innerHeight/3 };
     const leftOfcenter = { x: window.innerWidth/3, y: 2*window.innerHeight/3 };
@@ -54,10 +54,8 @@ class Environment {
 
     // create bodies
     this.players = [
-      //new SimpleHumanoidLegsOnly(leftOfcenter),
-      //new SimpleHumanoidLegsOnly(rightOfcenter)
-      new SimpleHumanoidFeet(leftOfcenter),
-      new SimpleHumanoidFeet(rightOfcenter)
+      new SimpleTriangleArms(leftOfcenter),
+      new SimpleTriangleArms(rightOfcenter)
     ];
 
     this.bodies = this.players.map(el => el.composite);
@@ -84,12 +82,21 @@ class Environment {
       [0, 0, 0, 0]
     ];
     MATTER.Events.on(this.engine, 'afterUpdate', this.updateInput.bind(this));
+    //MATTER.Render.stop(this.render);
   }
 
   setColors(playerIndex, tint, excludeBodies=[]) {
     this.bodies[playerIndex].bodies.forEach(body => {
       if (!excludeBodies.includes(body)) {
         body.render.fillStyle = COLORS.players[playerIndex][tint];
+      }
+    });
+  }
+
+  setOpacity(playerIndex, value, excludeBodies=[]) {
+    this.bodies[playerIndex].bodies.forEach(body => {
+      if (!excludeBodies.includes(body)) {
+        body.render.opacity = Math.max(0, Math.min(1, value));
       }
     });
   }
@@ -102,7 +109,13 @@ class Environment {
     if (effectInfo.event == 'RANDOM_SAMPLE_OFF') {
       this.setColors(effectInfo.player, 'main');
     }
-    console.log(effectInfo.player, effectInfo.event);
+    if (effectInfo.event == 'TRAINING') {
+      this.setOpacity(effectInfo.player, 1-effectInfo.value);
+    }
+    if (effectInfo.event == 'STOP_TRAINING') {
+      this.setOpacity(effectInfo.player, 1);
+    }
+    //console.log(effectInfo.player, effectInfo.event);
   }
   passRenderEffectFunction () {
     return this.renderEffect.bind(this);
@@ -124,33 +137,15 @@ class Environment {
     // output for each player is:
     // [ torso x normalized, torso y normalized, limb1 angle, limb1 angularvelocity, etc.. ]
 
-    const heigthNormValue = 200;
-
-    let torso = this.players[playerIndex].bodies[0];
-    let otherTorso = this.players[1-playerIndex].bodies[0];
+    let base = this.players[playerIndex].bodies[0];
+    let leftArm = this.players[playerIndex].bodies[1];
+    let otherBase = this.players[1-playerIndex].bodies[0];
 
     let output = [
-      (torso.position.x - this.normCenter.x) / this.normScale.x,
-      (torso.position.y - this.normCenter.y) / this.normScale.y,
-      torso.velocity.x,
-      torso.velocity.y,
-      (otherTorso.position.x - this.normCenter.x) / this.normScale.x
+      (base.position.x - this.normCenter.x) / this.normScale.x,
+      leftArm.angle,
+      (otherBase.position.x - this.normCenter.x) / this.normScale.x
     ];
-    this.players[playerIndex].bodies.forEach(body => {
-      output.push(body.angle, body.angularVelocity)
-    });
-
-    // override: make new simple output with only the angles
-    output = [
-      (torso.position.x - this.normCenter.x) / this.normScale.x,
-      0, 0, 0,
-      (otherTorso.position.x - this.normCenter.x) / this.normScale.x
-    ];
-    output.push(torso.angle, 0);
-    this.players[playerIndex].bodies.slice(1).forEach(body => {
-      output.push(body.angle - torso.angle, 0);
-    });
-
     return output;
   }
 

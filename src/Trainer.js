@@ -8,8 +8,8 @@ class Trainer {
     this.playerIndex = playerIndex;
     this.renderEffect = renderEffectContainer.passRenderEffectFunction();
 
-    this.inputDim = 15;
-    //this.outputDim = 4; // <- defined in CONFIG.actionDim
+    this.inputDim = 3; // input for the trainer = state information from the environment
+    // outputDim is defined in CONFIG.actionDim
 
     // random samples:
     this.randomSample = null;
@@ -19,18 +19,20 @@ class Trainer {
     // when to start training?
     this.minimumNumberOfSamples = 10;
     // how much samples to remember?
-    this.maxNumberOfSamples = 1000;
+    this.maxNumberOfSamples = 100;
     // keep this fraction of samples: (not neccessary to keep every frame)
     this.keepFraction = 1;
     // training batch size:
     this.batchSize = 8;
     // maximum number of epochs with the same data:
-    this.maxEpochs = 50;
+    this.maxEpochs = 100;
+    // minimum number of epochs:
+    this.minEpochs = 20;
 
     this.samplesTrainedSinceNewData = 0;
     this.lossNotImproving = false;
     this.lastLoss = 1;
-    this.lossMovingAverageSpeed = 0.1;
+    this.lossMovingAverageSpeed = 0.05;
 
     this.samples = [];
     this.pendingSamples = [];
@@ -111,11 +113,10 @@ class Trainer {
   train (input, output) {
     if (!this.modelLock) {
       this.modelLock = true;
-      //console.log('now training with input: ', input, 'and output:', output);
-      this.renderEffect({ player: this.playerIndex, event: "TRAINING" });
       this.model.fit(
         tf.tensor(input), tf.tensor(output), { batchSize: this.batchSize }
       ).then(history => {
+        this.renderEffect({ player: this.playerIndex, event: "TRAINING", value: this.lastLoss });
         this.modelLock = false;
         console.log('MA loss:', this.lastLoss);
         console.log('New loss:', history.history.loss[0]);
@@ -123,12 +124,14 @@ class Trainer {
           console.log('Stop training: max epochs with the same data reached.');
           this.renderEffect({ player: this.playerIndex, event: "STOP_TRAINING" });
         }
-        if (history.history.loss[0] > this.lastLoss) {
+        let newLoss = Math.min(1, history.history.loss[0]);
+
+        if (newLoss > this.lastLoss && this.samplesTrainedSinceNewData / this.samples.length > this.minEpochs) {
           this.lossNotImproving = true;
           console.log('Stop training: loss not improving');
           this.renderEffect({ player: this.playerIndex, event: "STOP_TRAINING" });
         }
-        this.lastLoss = (1 - this.lossMovingAverageSpeed) * this.lastLoss + this.lossMovingAverageSpeed * history.history.loss[0];
+        this.lastLoss = (1 - this.lossMovingAverageSpeed) * this.lastLoss + this.lossMovingAverageSpeed * newLoss;
 
       });
     }

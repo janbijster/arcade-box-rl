@@ -1,26 +1,26 @@
 {
   "environment": [
     {
-      "main": "#FAA923",
-      "light": "#FFCC76",
-      "dark": "#A66800"
+      "main": "#333",
+      "light": "#777",
+      "dark": "#111"
     },
     {
-      "main": "#18AE66",
-      "light": "#5FCD98",
-      "dark": "#00733C"
+      "main": "#222",
+      "light": "#333",
+      "dark": "#111"
     }
   ],
   "players": [
     {
-      "main": "#FA5A23",
-      "light": "#FF9976",
-      "dark": "#A62A00"
+      "main": "#FFB76B",
+      "light": "#FFDEBA",
+      "dark": "#EB9A45"
     },
     {
-      "main": "#235AA4",
-      "light": "#658EC6",
-      "dark": "#09336D"
+      "main": "#5969B5",
+      "light": "#B1BBE8",
+      "dark": "#23368C"
     }
   ]
 }

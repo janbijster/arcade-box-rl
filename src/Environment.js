@@ -10,7 +10,7 @@ class Environment {
   constructor () {
 
     const groundWidth = window.innerWidth - 180;
-    const groundWallHeight = 160;
+    const groundWallHeight = 60;
 
     // create an engine
     this.engine = MATTER.Engine.create()

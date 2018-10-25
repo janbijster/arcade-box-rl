@@ -69,7 +69,8 @@ class Trainer {
   makeModel () {
     let model = tf.sequential();
     let layer1Dim = Math.floor(0.5 * (this.inputDim + CONFIG.actionDim));
-    model.add(tf.layers.dense({units: layer1Dim, inputShape: [this.inputDim], activation: 'relu'}));
+    console.log('Nodes in the hidden layer:', layer1Dim);
+    model.add(tf.layers.dense({units: layer1Dim, inputShape: [this.inputDim], activation: 'softsign'}));
     model.add(tf.layers.dense({units: CONFIG.actionDim, activation: 'softsign'}));
     model.compile({
       optimizer: 'adam',
